@@ -158,7 +158,7 @@ void extract_file(const char *filename, size_t file_size, FILE *archive) {
     size_t bytes_remaining = file_size;
     while (bytes_remaining > 0) {
         size_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
-        size_t bytes_read = fread(buffer, 1, bytes_to_read, archive);
+        size_t bytes_read = fread(buffer, 1, sizeof(buffer), archive);
         if (bytes_read < bytes_to_read) {
             fprintf(stderr, "mytar: Unexpected EOF in archive\n");
             fclose(output);
