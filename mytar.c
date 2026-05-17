@@ -172,7 +172,7 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
         fprintf(stderr, "mytar: %s: Cannot open", archive_file);
         err_exit("Error is not recoverable: exiting now", 2);
     }
-    bool *found_files = malloc(files_to_list_count * sizeof(bool)); // worst case: all files are found
+    bool *found_files = malloc(files_to_list_count * sizeof(bool));
     size_t zero_block_count = 0;
     size_t blocks = 0;
     for (size_t i = 0; i < files_to_list_count; i++) {
