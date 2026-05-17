@@ -33,7 +33,7 @@ struct command_line_arguments {
     bool v_option_present;
 };
 void err_exit(const char *message, int exit_code) {
-    fprintf(stderr, "mytar: %s\n", message);
+    fprintf(stdout, "mytar: %s\n", message);
     exit(exit_code);
 }
 
@@ -79,7 +79,7 @@ struct command_line_arguments parse_command_line_arguments(int argc, char *argv[
                 }
                 result.v_option_present = true;
             } else {
-                fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][1]);
+                fprintf(stdout, "mytar: invalid option -- '%c'\n", argv[i][1]);
                 exit(64);
             }
         }
@@ -112,9 +112,9 @@ struct posix_header read_posix_header(FILE *archive) {
     size_t bytes_read = fread(&header, 1, sizeof(struct posix_header), archive);
     if (bytes_read < sizeof(struct posix_header)) {
         if (feof(archive)) {
-            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
+            fprintf(stdout, "mytar: Unexpected EOF in archive\n");
         } else {
-            fprintf(stderr, "mytar: Error reading archive\n");
+            fprintf(stdout, "mytar: Error reading archive\n");
         }
         err_exit("mytar: Error is not recoverable: exiting now", 2);
     }
@@ -123,14 +123,14 @@ struct posix_header read_posix_header(FILE *archive) {
 
 void skip_bytes(FILE *archive, uint64_t bytes_to_skip) {
     if (fseek(archive, bytes_to_skip, SEEK_CUR) != 0) {
-        fprintf(stderr, "mytar: Unexpected EOF in archive\n");
+        fprintf(stdout, "mytar: Unexpected EOF in archive\n");
         err_exit("mytar: Error is not recoverable: exiting now", 2);
     }
 }
 
 void assert_valid_posix_header(const struct posix_header *header) {
     if (header->typeflag != '0' && header->typeflag != '\0') {
-        fprintf(stderr, "mytar: Unsupported header type: '%d'\n", header->typeflag);
+        fprintf(stdout, "mytar: Unsupported header type: '%d'\n", header->typeflag);
     }
 }
 bool contains(const char *str, const char ** arr, size_t arr_size) {
@@ -145,7 +145,7 @@ bool contains(const char *str, const char ** arr, size_t arr_size) {
 void list_archive_contents(const char *archive_file, const char **files_to_list, size_t files_to_list_count) {
     FILE *archive = fopen(archive_file, "rb");
     if (archive == NULL) {
-        fprintf(stderr, "mytar: %s: Cannot open", archive_file);
+        fprintf(stdout, "mytar: %s: Cannot open", archive_file);
         err_exit("Error is not recoverable: exiting now", 2);
     }
     char** found_files = malloc(files_to_list_count * sizeof(char*));
@@ -169,7 +169,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         bool all_files_found = true;
         for (size_t i = 0; i < files_to_list_count; i++) {
             if (!contains(files_to_list[i], (const char **)found_files, found_files_count)) {
-                fprintf(stderr, "mytar: %s: Not found in archive\n", files_to_list[i]);
+                fprintf(stdout, "mytar: %s: Not found in archive\n", files_to_list[i]);
                 all_files_found = false;
             }
         }
