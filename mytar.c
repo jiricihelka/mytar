@@ -143,7 +143,30 @@ size_t contains(const char *str, const char **arr, size_t arr_size) {
     return -1; // not found
 }
 
-void list_archive_contents(const char *archive_file, const char **files_to_list, size_t files_to_list_count) {
+void extract_file(const char* filename, size_t file_size, FILE *archive) {
+    FILE *output = fopen(filename, "wb");
+    if (output == NULL) {
+        fprintf(stderr, "mytar: %s: Cannot create file\n", filename);
+        err_exit("Error is not recoverable: exiting now", 2);
+    }
+    char buffer[512];
+    size_t bytes_remaining = file_size;
+    while (bytes_remaining > 0) {
+        size_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
+        size_t bytes_read = fread(buffer, 1, bytes_to_read, archive);
+        if (bytes_read < bytes_to_read) {
+            fprintf(stderr, "mytar: Unexpected EOF in archive");
+            fclose(output);
+            err_exit("Error is not recoverable: exiting now", 2);
+        }
+        fwrite(buffer, 1, bytes_read, output);
+        bytes_remaining -= bytes_read;
+    }
+    fclose(output);
+}
+
+void traverse_archive_contents(const char *archive_file, const char **files_to_list, size_t files_to_list_count, bool extract,
+                               bool verbose) {
     FILE *archive = fopen(archive_file, "rb");
     if (archive == NULL) {
         fprintf(stderr, "mytar: %s: Cannot open", archive_file);
@@ -169,14 +192,20 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         assert_valid_posix_header(&header);
         uint64_t file_size = octal_or_base256_to_int(header.size, sizeof(header.size));
         size_t found_files_index;
-        if (files_to_list_count == 0) {
-            printf("%s\n", header.name);
-        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
-            printf("%s\n", header.name);
-            found_files[found_files_index] = true;
+        if (verbose) {
+            if (files_to_list_count == 0) {
+                printf("%s\n", header.name);
+            } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
+                printf("%s\n", header.name);
+                found_files[found_files_index] = true;
+            }
         }
-        blocks += (file_size + 511) / 512 + 1; // round up to next 512-byte block 
-        skip_blocks(archive, (file_size + 511) / 512); // skip file content, round up to next 512-byte block
+        blocks += (file_size + 511) / 512 + 1; // round up to next 512-byte block
+        if (extract) {
+            extract_file(header.name, file_size, archive);
+        } else {
+            skip_blocks(archive, (file_size + 511) / 512); // skip file content, round up to next 512-byte block
+        }
     }
     if (files_to_list_count > 0) {
         bool all_files_found = true;
@@ -206,12 +235,12 @@ int main(int argc, char *argv[]) {
 
     struct command_line_arguments args = parse_command_line_arguments(argc, argv);
     if (args.x_flag) {
-        // extract_archive(args.f_arg, args.v_option_present);
+        traverse_archive_contents(args.bare_args[0], NULL, 0, true, args.v_flag);
     } else if (args.t_flag) {
         if (args.bare_args_count == 0) {
             err_exit("mytar: you must specify at least one file to list with -t option", 64);
         }
-        list_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1);
+        traverse_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1, false, true);
     } else {
         err_exit("you must specify either -t or -x option", 64);
     }
