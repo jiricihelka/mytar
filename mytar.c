@@ -128,6 +128,7 @@ void skip_bytes(FILE *archive, uint64_t bytes_to_skip) {
 void assert_valid_posix_header(const struct posix_header *header) {
     if (header->typeflag != '0' && header->typeflag != '\0') {
         fprintf(stderr, "mytar: Unsupported header type: '%d'\n", header->typeflag);
+        exit(2);
     }
 }
 size_t contains(const char *str, const char **arr, size_t arr_size) {
@@ -162,7 +163,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         size_t found_files_index;
         if (files_to_list_count == 0) {
             printf("%s\n", header.name);
-        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != -1) {
+        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
             printf("%s\n", header.name);
             found_files[found_files_index] = true;
         }
