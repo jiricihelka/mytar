@@ -155,10 +155,10 @@ void extract_file(const char *filename, size_t file_size, FILE *archive) {
         err_exit("Error is not recoverable: exiting now", 2);
     }
     char buffer[512];
-    ssize_t bytes_remaining = file_size;
+    int64_t bytes_remaining = file_size;
     while (bytes_remaining > 0) {
-        ssize_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
-        ssize_t bytes_read = fread(buffer, 1, sizeof(buffer), archive);
+        int64_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
+        int64_t bytes_read = fread(buffer, 1, sizeof(buffer), archive);
         if (bytes_read < bytes_to_read) {
             fprintf(stderr, "mytar: Unexpected EOF in archive\n");
             fclose(output);
