@@ -133,6 +133,11 @@ void assert_valid_posix_header(const struct posix_header *header) {
         fprintf(stderr, "mytar: Unsupported header type: %d\n", header->typeflag);
         exit(2);
     }
+    if (header->magic[0] != 'u' || header->magic[1] != 's' || header->magic[2] != 't' || header->magic[3] != 'a' ||
+        header->magic[4] != 'r' || header->magic[5] != '\0') {
+        fprintf(stderr, "mytar: This does not look like a tar archive\n");
+        err_exit("Exiting with failure status due to previous errors", 2);
+    }
 }
 size_t contains(const char *str, const char **arr, size_t arr_size) {
     for (size_t i = 0; i < arr_size; i++) {
@@ -143,7 +148,7 @@ size_t contains(const char *str, const char **arr, size_t arr_size) {
     return -1; // not found
 }
 
-void extract_file(const char* filename, size_t file_size, FILE *archive) {
+void extract_file(const char *filename, size_t file_size, FILE *archive) {
     FILE *output = fopen(filename, "wb");
     if (output == NULL) {
         fprintf(stderr, "mytar: %s: Cannot create file\n", filename);
@@ -192,14 +197,15 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
         assert_valid_posix_header(&header);
         uint64_t file_size = octal_or_base256_to_int(header.size, sizeof(header.size));
         size_t found_files_index;
-        if (verbose) {
-            if (files_to_list_count == 0) {
-                printf("%s\n", header.name);
-            } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
-                printf("%s\n", header.name);
-                found_files[found_files_index] = true;
-            }
-        }
+        if (files_to_list_count == 0) {
+            // if no files specified, list/extract all files
+        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
+            found_files[found_files_index] = true;
+        } else
+            continue; // file not in list of files to list/extract, skip it
+
+        if (verbose)
+            printf("%s\n", header.name);
         blocks += (file_size + 511) / 512 + 1; // round up to next 512-byte block
         if (extract) {
             extract_file(header.name, file_size, archive);
@@ -235,7 +241,7 @@ int main(int argc, char *argv[]) {
 
     struct command_line_arguments args = parse_command_line_arguments(argc, argv);
     if (args.x_flag) {
-        traverse_archive_contents(args.bare_args[0], NULL, 0, true, args.v_flag);
+        traverse_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1, true, args.v_flag);
     } else if (args.t_flag) {
         if (args.bare_args_count == 0) {
             err_exit("mytar: you must specify at least one file to list with -t option", 64);
