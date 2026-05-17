@@ -67,7 +67,7 @@
           export TESTS=${tests}
           export TMPDIR=$(mktemp -d)
 
-          alias build='clang -Wall -Wextra -o mytar -std=c99 mytar.c'
+          alias build='clang -Wall -Wextra -fno-strict-aliasing -fPIC -fsanitize=address -o mytar -std=c99 mytar.c'
           alias mytar='./mytar'
         '';
       };

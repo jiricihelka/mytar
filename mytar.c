@@ -96,7 +96,7 @@ uint64_t octal_or_base256_to_int(const char *str, size_t size) {
 }
 
 bool read_posix_header(FILE *archive, struct posix_header *header) {
-    size_t bytes_read = fread(&header, 1, sizeof(struct posix_header), archive);
+    size_t bytes_read = fread(header, 1, sizeof(struct posix_header), archive);
     if (bytes_read < sizeof(struct posix_header)) {
         if (feof(archive)) {
             return false; // end of archive
