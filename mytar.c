@@ -62,7 +62,7 @@ struct command_line_arguments parse_command_line_arguments(int argc, char *argv[
                     break;
                 default:
                     fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][j]);
-                    err_exit("mytar: Error is not recoverable: exiting now", 2);
+                    err_exit("Error is not recoverable: exiting now", 2);
                 }
             }
         } else {
@@ -70,10 +70,10 @@ struct command_line_arguments parse_command_line_arguments(int argc, char *argv[
         }
     }
     if (!args.f_flag) {
-        err_exit("mytar: option requires an argument -- 'f'", 2);
+        err_exit("option requires an argument -- 'f'", 2);
     }
     if (args.t_flag && args.x_flag) {
-        err_exit("mytar: cannot specify both -t and -x options", 2);
+        err_exit("cannot specify both -t and -x options", 2);
     }
     return args;
 }
@@ -103,7 +103,7 @@ bool read_posix_header(FILE *archive, struct posix_header *header) {
         } else {
             fprintf(stderr, "mytar: Error reading archive\n");
         }
-        err_exit("mytar: Error is not recoverable: exiting now", 2);
+        err_exit("Error is not recoverable: exiting now", 2);
     }
     return true;
 }
@@ -173,7 +173,7 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
                                bool verbose) {
     FILE *archive = fopen(archive_file, "rb");
     if (archive == NULL) {
-        fprintf(stderr, "mytar: %s: Cannot open", archive_file);
+        fprintf(stderr, "mytar: %s: Cannot open\n", archive_file);
         err_exit("Error is not recoverable: exiting now", 2);
     }
     bool *found_files = malloc(files_to_list_count * sizeof(bool));
@@ -235,7 +235,7 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
 // void extract_archive(const char *archive_file, bool verbose) {}
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        err_exit("mytar: need at least one option", 2);
+        err_exit("need at least one option", 2);
     }
 
     struct command_line_arguments args = parse_command_line_arguments(argc, argv);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
         traverse_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1, true, args.v_flag);
     } else if (args.t_flag) {
         if (args.bare_args_count == 0) {
-            err_exit("mytar: you must specify at least one file to list with -t option", 64);
+            err_exit("you must specify at least one file to list with -t option", 64);
         }
         traverse_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1, false, true);
     } else {
