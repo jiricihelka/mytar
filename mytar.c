@@ -26,68 +26,56 @@ struct posix_header {   /* byte offset */
 };
 
 struct command_line_arguments {
-    const char *f_arg;
-    const char **t_args;
-    size_t t_args_count;
-    bool x_options_present;
-    bool v_option_present;
+    const char **bare_args;
+    size_t bare_args_count;
+    bool f_flag;
+    bool t_flag;
+    bool x_flag;
+    bool v_flag;
 };
+
 void err_exit(const char *message, int exit_code) {
     fprintf(stderr, "mytar: %s\n", message);
     exit(exit_code);
 }
 
 struct command_line_arguments parse_command_line_arguments(int argc, char *argv[]) {
-    struct command_line_arguments result = {0};
+    struct command_line_arguments args = {0};
+    // This memory lives until the end of the program, so we don't need to free it. 
+    args.bare_args = malloc(argc * sizeof(char*)); // worst case: all args are bare args 
+    args.bare_args_count = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
-            if (argv[i][1] == 'f') {
-                if (argv[i][2] != '\0') {
-                    err_exit("option -f must be followed by a space and the archive file name", 64);
-                }
-                if (result.f_arg != NULL) {
-                    err_exit("option -f specified multiple times", 64);
-                }
-                if (i + 1 < argc) {
-                    result.f_arg = argv[i + 1];
-                    i++;
-                } else {
-                    err_exit("option requires an argument -- 'f'", 64);
-                }
-            } else if (argv[i][1] == 't') {
-                if (argv[i][2] != '\0') {
-                    err_exit("option -t must be followed by a space and optionally files to list", 64);
-                }
-                size_t remaining_args = 0;
-                for (int j = i + 1; j < argc; j++) {
-                    if (argv[j][0] == '-') {
+            for (size_t j = 1; argv[i][j] != '\0'; j++) {
+                switch (argv[i][j]) {
+                    case 'f':
+                        args.f_flag = true;
                         break;
-                    }
-                    remaining_args++;
+                    case 't':
+                        args.t_flag = true;
+                        break;
+                    case 'x':
+                        args.x_flag = true;
+                        break;
+                    case 'v':
+                        args.v_flag = true;
+                        break;
+                    default:
+                        fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][j]);
+                        err_exit("mytar: Error is not recoverable: exiting now", 2);
                 }
-                result.t_args = (const char **)(&argv[i + 1]);
-                result.t_args_count = remaining_args;
-                i += remaining_args;
-            } else if (argv[i][1] == 'x') {
-                if (argv[i][2] != '\0') {
-                    err_exit("option -x must be followed by a space", 64);
-                }
-                result.x_options_present = true;
-            } else if (argv[i][1] == 'v') {
-                if (argv[i][2] != '\0') {
-                    err_exit("option -v must be followed by a space", 64);
-                }
-                result.v_option_present = true;
-            } else {
-                fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][1]);
-                exit(64);
             }
+        } else {
+            args.bare_args[args.bare_args_count++] = argv[i];
         }
     }
-    if (result.f_arg == NULL) {
-        err_exit("you must specify the archive file with -f", 64);
+    if (!args.f_flag) {
+        err_exit("mytar: option requires an argument -- 'f'", 2);
     }
-    return result;
+    if (args.t_flag && args.x_flag) {
+        err_exit("mytar: cannot specify both -t and -x options", 2);
+    }
+    return args;
 }
 uint64_t octal_or_base256_to_int(const char *str, size_t size) {
     uint64_t result = 0;
@@ -197,6 +185,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         fprintf(stderr, "mytar: A lone zero block at 4\n");
     }
     fclose(archive);
+    free(found_files); // All other exit paths directly exit, so memory leak doesn't happen
 }
 
 // void extract_archive(const char *archive_file, bool verbose) {}
@@ -206,10 +195,13 @@ int main(int argc, char *argv[]) {
     }
 
     struct command_line_arguments args = parse_command_line_arguments(argc, argv);
-    if (args.x_options_present) {
+    if (args.x_flag) {
         // extract_archive(args.f_arg, args.v_option_present);
-    } else if (args.t_args_count > 0 || args.t_args != NULL) {
-        list_archive_contents(args.f_arg, args.t_args, args.t_args_count);
+    } else if (args.t_flag) {
+        if (args.bare_args_count == 0) {
+            err_exit("mytar: you must specify at least one file to list with -t option", 64);
+        }
+        list_archive_contents(args.bare_args[0], args.bare_args + 1, args.bare_args_count - 1);
     } else {
         err_exit("you must specify either -t or -x option", 64);
     }
