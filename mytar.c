@@ -161,7 +161,8 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
             break; // end of archive
         }
         if (is_zero_block(&header)) {
-            zero_block_count++;
+            ++zero_block_count;
+            ++blocks;
             continue;
         }
 
