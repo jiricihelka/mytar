@@ -123,7 +123,7 @@ void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
     char buffer[512];
     for (uint64_t i = 0; i < blocks_to_skip; i++) {
         if (fread(buffer, 1, sizeof(buffer), archive) < sizeof(buffer)) {
-            fprintf(stderr, "mytar: Unexpected EOF in archive skip\n");
+            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
             err_exit("Error is not recoverable: exiting now", 2);
         }
     }
@@ -155,12 +155,12 @@ void extract_file(const char *filename, size_t file_size, FILE *archive) {
         err_exit("Error is not recoverable: exiting now", 2);
     }
     char buffer[512];
-    size_t bytes_remaining = file_size;
+    ssize_t bytes_remaining = file_size;
     while (bytes_remaining > 0) {
-        size_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
-        size_t bytes_read = fread(buffer, 1, sizeof(buffer), archive);
+        ssize_t bytes_to_read = bytes_remaining < sizeof(buffer) ? bytes_remaining : sizeof(buffer);
+        ssize_t bytes_read = fread(buffer, 1, sizeof(buffer), archive);
         if (bytes_read < bytes_to_read) {
-            fprintf(stderr, "mytar: Unexpected EOF in archive (read %u bytes instead of %u)\n", (unsigned)bytes_read, (unsigned)bytes_to_read);
+            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
             fclose(output);
             err_exit("Error is not recoverable: exiting now", 2);
         }
