@@ -207,8 +207,12 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
             // if no files specified, list/extract all files
         } else if ((found_files_index = contains(name, files_to_list, files_to_list_count)) != (size_t)-1) {
             found_files[found_files_index] = true;
-        } else
-            continue; // file not in list of files to list/extract, skip it
+        } else {
+            // file not in list of files to list/extract, skip it
+            blocks += (file_size + 511) / 512 + 1;
+            skip_blocks(archive, (file_size + 511) / 512);
+            continue;
+        } 
 
         if (verbose)
             printf("%s\n", name);
