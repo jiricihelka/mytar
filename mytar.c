@@ -118,10 +118,13 @@ bool is_zero_block(const struct posix_header *header) {
     return true;
 }
 
-void skip_bytes(FILE *archive, uint64_t bytes_to_skip) {
-    if (fseek(archive, bytes_to_skip, SEEK_CUR) != 0) {
-        fprintf(stderr, "mytar: Unexpected EOF in archive\n");
-        err_exit("mytar: Error is not recoverable: exiting now", 2);
+void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
+    char buffer[512];
+    for (uint64_t i = 0; i < blocks_to_skip; i++) {
+        if (fread(buffer, 1, sizeof(buffer), archive) < sizeof(buffer)) {
+            fprintf(stderr, "mytar: Error skipping blocks in archive\n");
+            err_exit("mytar: Error is not recoverable: exiting now", 2);
+        }
     }
 }
 
@@ -172,7 +175,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
             found_files[found_files_index] = true;
         }
         ++files;
-        skip_bytes(archive, (file_size + 511) & ~511); // skip file content, round up to next 512-byte block
+        skip_blocks(archive, (file_size + 511) / 512); // skip file content, round up to next 512-byte block
     }
     if (files_to_list_count > 0) {
         bool all_files_found = true;
