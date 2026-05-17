@@ -48,7 +48,7 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [
           clang-tools
-          gcc
+          clang
           valgrind
           gdb
           openssl
@@ -67,7 +67,8 @@
           export TESTS=${tests}
           export TMPDIR=$(mktemp -d)
 
-          alias test-test='cd "$TESTS" && MYGNUTAR=${pkgs.gnutar}/bin/tar ${pkgs.bash}/bin/bash -c "./run-tests.sh $(cat phase-1.tests)"'
+          alias build='clang -Wall -Wextra -o mytar -std=c99 mytar.c'
+          alias mytar='./mytar'
         '';
       };
     };
