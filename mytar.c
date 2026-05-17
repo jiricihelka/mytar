@@ -123,7 +123,7 @@ void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
     char buffer[512];
     for (uint64_t i = 0; i < blocks_to_skip; i++) {
         if (fread(buffer, 1, sizeof(buffer), archive) < sizeof(buffer)) {
-            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
+            fprintf(stderr, "mytar: Unexpected EOF in archive skip\n");
             err_exit("Error is not recoverable: exiting now", 2);
         }
     }
