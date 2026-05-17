@@ -130,7 +130,7 @@ void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
 
 void assert_valid_posix_header(const struct posix_header *header, bool check_magic) {
     if (header->typeflag != '0' && header->typeflag != '\0') {
-        fprintf(stderr, "mytar: Unsupported header type: %d\n", header->typeflag);
+        fprintf(stderr, "mytar: Unsupported header type: %u\n", (unsigned char)header->typeflag);
         exit(2);
     }
     if (check_magic && strncmp(header->magic, "ustar", 5) != 0) {
