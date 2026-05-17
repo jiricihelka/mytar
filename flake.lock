@@ -16,9 +16,43 @@
         "type": "github"
       }
     },
+    "prgc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778605916,
+        "narHash": "sha256-OTRKFeHFEi0ewsVFnH8gxFp/IvKcjmoKWBz+aQKIws0=",
+        "owner": "devnull-cz",
+        "repo": "c-prog-lang",
+        "rev": "61ce4e69741afd14957af2e152a8afc43cd92d5c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "devnull-cz",
+        "repo": "c-prog-lang",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "prgc": "prgc",
+        "stef": "stef"
+      }
+    },
+    "stef": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774609533,
+        "narHash": "sha256-95t5wH7ViTaS+QBPsfFiL2EhJCx/AfoCYjDHFtBBTik=",
+        "owner": "devnull-cz",
+        "repo": "stef",
+        "rev": "de05710e917698b871d2950d8aab6b22feb44ba0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "devnull-cz",
+        "repo": "stef",
+        "type": "github"
       }
     }
   },
