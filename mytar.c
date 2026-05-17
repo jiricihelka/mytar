@@ -133,8 +133,7 @@ void assert_valid_posix_header(const struct posix_header *header) {
         fprintf(stderr, "mytar: Unsupported header type: %d\n", header->typeflag);
         exit(2);
     }
-    if (header->magic[0] != 'u' || header->magic[1] != 's' || header->magic[2] != 't' || header->magic[3] != 'a' ||
-        header->magic[4] != 'r' || header->magic[5] != '\0') {
+    if (strncmp(header->magic, "ustar", 5) != 0) {
         fprintf(stderr, "mytar: This does not look like a tar archive\n");
         err_exit("Exiting with failure status due to previous errors", 2);
     }
