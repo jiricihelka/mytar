@@ -122,8 +122,8 @@ void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
     char buffer[512];
     for (uint64_t i = 0; i < blocks_to_skip; i++) {
         if (fread(buffer, 1, sizeof(buffer), archive) < sizeof(buffer)) {
-            fprintf(stderr, "mytar: Error skipping blocks in archive\n");
-            err_exit("mytar: Error is not recoverable: exiting now", 2);
+            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
+            err_exit("Error is not recoverable: exiting now", 2);
         }
     }
 }
@@ -151,7 +151,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
     }
     bool *found_files = malloc(files_to_list_count * sizeof(bool)); // worst case: all files are found
     size_t zero_block_count = 0;
-    size_t files = 0;
+    size_t blocks = 0;
     for (size_t i = 0; i < files_to_list_count; i++) {
         found_files[i] = false;
     }
@@ -174,7 +174,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
             printf("%s\n", header.name);
             found_files[found_files_index] = true;
         }
-        ++files;
+        blocks += (file_size + 511) / 512 + 1; // round up to next 512-byte block 
         skip_blocks(archive, (file_size + 511) / 512); // skip file content, round up to next 512-byte block
     }
     if (files_to_list_count > 0) {
@@ -191,7 +191,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
     }
 
     if (zero_block_count == 1) {
-        fprintf(stderr, "mytar: A lone zero block at %zu\n", files);
+        fprintf(stderr, "mytar: A lone zero block at %zu\n", blocks);
     }
     fclose(archive);
     free(found_files); // All other paths directly exit, so memory leak doesn't happen
