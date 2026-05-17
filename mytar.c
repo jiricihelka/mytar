@@ -96,6 +96,7 @@ uint64_t octal_or_base256_to_int(const char *str, size_t size) {
 }
 
 bool read_posix_header(FILE *archive, struct posix_header *header) {
+    memset(header, 0, sizeof(struct posix_header));
     size_t bytes_read = fread(header, 1, sizeof(struct posix_header), archive);
     if (bytes_read < sizeof(struct posix_header)) {
         if (feof(archive)) {
@@ -184,7 +185,7 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
     }
     bool first_header = true;
     while (true) {
-        struct posix_header header;
+        struct posix_header header = {0};
         if (!read_posix_header(archive, &header)) {
             break; // end of archive
         }
