@@ -128,12 +128,12 @@ void skip_blocks(FILE *archive, uint64_t blocks_to_skip) {
     }
 }
 
-void assert_valid_posix_header(const struct posix_header *header) {
+void assert_valid_posix_header(const struct posix_header *header, bool check_magic) {
     if (header->typeflag != '0' && header->typeflag != '\0') {
         fprintf(stderr, "mytar: Unsupported header type: %d\n", header->typeflag);
         exit(2);
     }
-    if (strncmp(header->magic, "ustar", 5) != 0) {
+    if (check_magic && strncmp(header->magic, "ustar", 5) != 0) {
         fprintf(stderr, "mytar: This does not look like a tar archive\n");
         err_exit("Exiting with failure status due to previous errors", 2);
     }
@@ -182,6 +182,7 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
     for (size_t i = 0; i < files_to_list_count; i++) {
         found_files[i] = false;
     }
+    bool first_header = true;
     while (true) {
         struct posix_header header;
         if (!read_posix_header(archive, &header)) {
@@ -193,7 +194,8 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
             continue;
         }
 
-        assert_valid_posix_header(&header);
+        assert_valid_posix_header(&header, first_header);
+        first_header = false;
         uint64_t file_size = octal_or_base256_to_int(header.size, sizeof(header.size));
         size_t found_files_index;
         if (files_to_list_count == 0) {
