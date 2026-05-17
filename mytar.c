@@ -148,6 +148,10 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
     }
     bool *found_files = malloc(files_to_list_count * sizeof(bool)); // worst case: all files are found
     size_t zero_block_count = 0;
+    size_t files = 0;
+    for (size_t i = 0; i < files_to_list_count; i++) {
+        found_files[i] = false;
+    }
     while (true) {
         struct posix_header header;
         if (!read_posix_header(archive, &header)) {
@@ -167,6 +171,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
             printf("%s\n", header.name);
             found_files[found_files_index] = true;
         }
+        ++files;
         skip_bytes(archive, (file_size + 511) & ~511); // skip file content, round up to next 512-byte block
     }
     if (files_to_list_count > 0) {
@@ -183,7 +188,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
     }
 
     if (zero_block_count == 1) {
-        fprintf(stderr, "mytar: A lone zero block at 4\n");
+        fprintf(stderr, "mytar: A lone zero block at %zu\n", files);
     }
     fclose(archive);
     free(found_files); // All other paths directly exit, so memory leak doesn't happen
