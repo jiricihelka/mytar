@@ -193,6 +193,10 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
             ++blocks;
             continue;
         }
+        /* Ensure header.name is NUL-terminated before any string ops. */
+        char name[101];
+        memcpy(name, header.name, 100);
+        name[100] = '\0';
 
         assert_valid_posix_header(&header, first_header);
         first_header = false;
@@ -200,16 +204,16 @@ void traverse_archive_contents(const char *archive_file, const char **files_to_l
         size_t found_files_index;
         if (files_to_list_count == 0) {
             // if no files specified, list/extract all files
-        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != (size_t)-1) {
+        } else if ((found_files_index = contains(name, files_to_list, files_to_list_count)) != (size_t)-1) {
             found_files[found_files_index] = true;
         } else
             continue; // file not in list of files to list/extract, skip it
 
         if (verbose)
-            printf("%s\n", header.name);
+            printf("%s\n", name);
         blocks += (file_size + 511) / 512 + 1; // round up to next 512-byte block
         if (extract) {
-            extract_file(header.name, file_size, archive);
+            extract_file(name, file_size, archive);
         } else {
             skip_blocks(archive, (file_size + 511) / 512); // skip file content, round up to next 512-byte block
         }
