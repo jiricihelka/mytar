@@ -41,28 +41,28 @@ void err_exit(const char *message, int exit_code) {
 
 struct command_line_arguments parse_command_line_arguments(int argc, char *argv[]) {
     struct command_line_arguments args = {0};
-    // This memory lives until the end of the program, so we don't need to free it. 
-    args.bare_args = malloc(argc * sizeof(char*)); // worst case: all args are bare args 
+    // This memory lives until the end of the program, so we don't need to free it.
+    args.bare_args = malloc(argc * sizeof(char *)); // worst case: all args are bare args
     args.bare_args_count = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             for (size_t j = 1; argv[i][j] != '\0'; j++) {
                 switch (argv[i][j]) {
-                    case 'f':
-                        args.f_flag = true;
-                        break;
-                    case 't':
-                        args.t_flag = true;
-                        break;
-                    case 'x':
-                        args.x_flag = true;
-                        break;
-                    case 'v':
-                        args.v_flag = true;
-                        break;
-                    default:
-                        fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][j]);
-                        err_exit("mytar: Error is not recoverable: exiting now", 2);
+                case 'f':
+                    args.f_flag = true;
+                    break;
+                case 't':
+                    args.t_flag = true;
+                    break;
+                case 'x':
+                    args.x_flag = true;
+                    break;
+                case 'v':
+                    args.v_flag = true;
+                    break;
+                default:
+                    fprintf(stderr, "mytar: invalid option -- '%c'\n", argv[i][j]);
+                    err_exit("mytar: Error is not recoverable: exiting now", 2);
                 }
             }
         } else {
@@ -130,13 +130,13 @@ void assert_valid_posix_header(const struct posix_header *header) {
         fprintf(stderr, "mytar: Unsupported header type: '%d'\n", header->typeflag);
     }
 }
-bool contains(const char *str, const char ** arr, size_t arr_size) {
+size_t contains(const char *str, const char **arr, size_t arr_size) {
     for (size_t i = 0; i < arr_size; i++) {
         if (strcmp(str, arr[i]) == 0) {
-            return true;
+            return i;
         }
     }
-    return false;
+    return -1; // not found
 }
 
 void list_archive_contents(const char *archive_file, const char **files_to_list, size_t files_to_list_count) {
@@ -145,8 +145,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         fprintf(stderr, "mytar: %s: Cannot open", archive_file);
         err_exit("Error is not recoverable: exiting now", 2);
     }
-    char** found_files = malloc(files_to_list_count * sizeof(char*));
-    size_t found_files_count = 0;
+    bool *found_files = malloc(files_to_list_count * sizeof(bool)); // worst case: all files are found
     size_t zero_block_count = 0;
     while (true) {
         struct posix_header header;
@@ -160,18 +159,19 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
 
         assert_valid_posix_header(&header);
         uint64_t file_size = octal_or_base256_to_int(header.size, sizeof(header.size));
+        size_t found_files_index;
         if (files_to_list_count == 0) {
             printf("%s\n", header.name);
-        } else if (contains(header.name, files_to_list, files_to_list_count)) {
+        } else if ((found_files_index = contains(header.name, files_to_list, files_to_list_count)) != -1) {
             printf("%s\n", header.name);
-            found_files[found_files_count++] = header.name;
+            found_files[found_files_index] = true;
         }
         skip_bytes(archive, (file_size + 511) & ~511); // skip file content, round up to next 512-byte block
     }
     if (files_to_list_count > 0) {
         bool all_files_found = true;
         for (size_t i = 0; i < files_to_list_count; i++) {
-            if (!contains(files_to_list[i], (const char **)found_files, found_files_count)) {
+            if (!found_files[i]) {
                 fprintf(stderr, "mytar: %s: Not found in archive\n", files_to_list[i]);
                 all_files_found = false;
             }
@@ -185,7 +185,7 @@ void list_archive_contents(const char *archive_file, const char **files_to_list,
         fprintf(stderr, "mytar: A lone zero block at 4\n");
     }
     fclose(archive);
-    free(found_files); // All other exit paths directly exit, so memory leak doesn't happen
+    free(found_files); // All other paths directly exit, so memory leak doesn't happen
 }
 
 // void extract_archive(const char *archive_file, bool verbose) {}
